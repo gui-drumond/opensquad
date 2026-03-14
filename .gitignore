@@ -18,11 +18,9 @@ _opensquad/_browser_profile/
 .vscode/settings.json
 .cursorignore
 
-# Squad data (user content, investigations, memories — sensitive)
-squads/*/pipeline/
-squads/*/_investigations/
-squads/*/_memory/
-squads/*/output/
+# Squad data (ALL user-generated content is sensitive)
+squads/*
+!squads/.gitkeep
 
 # Temp files
 temp/
