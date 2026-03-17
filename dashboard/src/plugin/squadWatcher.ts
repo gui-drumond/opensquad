@@ -3,6 +3,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import type { Server, IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
+import { watch as chokidarWatch } from "chokidar";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import type { SquadInfo, SquadState, WsMessage } from "../types/state";
@@ -18,10 +20,14 @@ function resolveSquadsDir(): string {
   return path.resolve(process.cwd(), "../squads"); // default (will be created on demand)
 }
 
-function discoverSquads(squadsDir: string): SquadInfo[] {
-  if (!fs.existsSync(squadsDir)) return [];
+async function discoverSquads(squadsDir: string): Promise<SquadInfo[]> {
+  let entries;
+  try {
+    entries = await fsp.readdir(squadsDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
 
-  const entries = fs.readdirSync(squadsDir, { withFileTypes: true });
   const squads: SquadInfo[] = [];
 
   for (const entry of entries) {
@@ -29,27 +35,24 @@ function discoverSquads(squadsDir: string): SquadInfo[] {
     if (entry.name.startsWith(".") || entry.name.startsWith("_")) continue;
 
     const yamlPath = path.join(squadsDir, entry.name, "squad.yaml");
-    if (fs.existsSync(yamlPath)) {
-      try {
-        const raw = fs.readFileSync(yamlPath, "utf-8");
-        const parsed = parseYaml(raw);
-        const s = parsed?.squad;
-        if (s) {
-          squads.push({
-            code: typeof s.code === "string" ? s.code : entry.name,
-            name: typeof s.name === "string" ? s.name : entry.name,
-            description: typeof s.description === "string" ? s.description : "",
-            icon: typeof s.icon === "string" ? s.icon : "\u{1F4CB}",
-            agents: Array.isArray(s.agents) ? (s.agents as unknown[]).filter((a): a is string => typeof a === "string") : [],
-          });
-          continue;
-        }
-      } catch {
-        // Fall through to default
+    try {
+      const raw = await fsp.readFile(yamlPath, "utf-8");
+      const parsed = parseYaml(raw);
+      const s = parsed?.squad;
+      if (s) {
+        squads.push({
+          code: typeof s.code === "string" ? s.code : entry.name,
+          name: typeof s.name === "string" ? s.name : entry.name,
+          description: typeof s.description === "string" ? s.description : "",
+          icon: typeof s.icon === "string" ? s.icon : "\u{1F4CB}",
+          agents: Array.isArray(s.agents) ? (s.agents as unknown[]).filter((a): a is string => typeof a === "string") : [],
+        });
+        continue;
       }
+    } catch {
+      // No squad.yaml or invalid YAML — fall through to default
     }
 
-    // No squad.yaml or invalid YAML — use directory name as fallback
     squads.push({
       code: entry.name,
       name: entry.name,
@@ -62,32 +65,36 @@ function discoverSquads(squadsDir: string): SquadInfo[] {
   return squads;
 }
 
-function readActiveStates(squadsDir: string): Record<string, SquadState> {
+async function readActiveStates(squadsDir: string): Promise<Record<string, SquadState>> {
   const states: Record<string, SquadState> = {};
-  if (!fs.existsSync(squadsDir)) return states;
 
-  const entries = fs.readdirSync(squadsDir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fsp.readdir(squadsDir, { withFileTypes: true });
+  } catch {
+    return states;
+  }
+
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const statePath = path.join(squadsDir, entry.name, "state.json");
-    if (!fs.existsSync(statePath)) continue;
 
     try {
-      const raw = fs.readFileSync(statePath, "utf-8");
+      const raw = await fsp.readFile(statePath, "utf-8");
       states[entry.name] = JSON.parse(raw);
     } catch {
-      // Skip invalid JSON
+      // Skip missing or invalid JSON
     }
   }
 
   return states;
 }
 
-function buildSnapshot(squadsDir: string): WsMessage {
+async function buildSnapshot(squadsDir: string): Promise<WsMessage> {
   return {
     type: "SNAPSHOT",
-    squads: discoverSquads(squadsDir),
-    activeStates: readActiveStates(squadsDir),
+    squads: await discoverSquads(squadsDir),
+    activeStates: await readActiveStates(squadsDir),
   };
 }
 
@@ -95,7 +102,11 @@ function broadcast(wss: WebSocketServer, msg: WsMessage) {
   const data = JSON.stringify(msg);
   for (const client of wss.clients) {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
+      try {
+        client.send(data);
+      } catch {
+        // Client connection dying — ws library will clean it up
+      }
     }
   }
 }
@@ -104,6 +115,11 @@ export function squadWatcherPlugin(): Plugin {
   return {
     name: "squad-watcher",
     configureServer(server: ViteDevServer) {
+      if (!server.httpServer) {
+        server.config.logger.warn("[squad-watcher] no httpServer — skipping");
+        return;
+      }
+
       const squadsDir = resolveSquadsDir();
       server.config.logger.info(`[squad-watcher] squads dir: ${squadsDir}`);
 
@@ -119,57 +135,69 @@ export function squadWatcherPlugin(): Plugin {
       });
 
       // Send snapshot on new connection
-      wss.on("connection", (ws) => {
-        ws.send(JSON.stringify(buildSnapshot(squadsDir)));
-      });
-
-      // Ensure squads directory exists
-      if (!fs.existsSync(squadsDir)) {
-        fs.mkdirSync(squadsDir, { recursive: true });
-      }
-
-      // Debounce timers per squad to avoid reading partial writes
-      const changeTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-      // Use native fs.watch with recursive mode — reliable on Windows for
-      // files written by external processes (the CLI agent runner).
-      const fsWatcher = fs.watch(squadsDir, { recursive: true }, (_event, filename) => {
-        if (!filename || typeof filename !== "string") return;
-
-        // Normalize path separators (Windows uses backslashes)
-        const normalized = filename.replace(/\\/g, "/");
-
-        if (normalized.endsWith("state.json")) {
-          const parts = normalized.split("/");
-          const squadName = parts.length >= 2 ? parts[0] : null;
-          if (!squadName) return;
-
-          // Debounce to handle rapid writes / partial file states
-          clearTimeout(changeTimers.get(squadName));
-          changeTimers.set(squadName, setTimeout(() => {
-            const statePath = path.join(squadsDir, squadName, "state.json");
-            if (!fs.existsSync(statePath)) {
-              clearTimeout(changeTimers.get(squadName));
-              changeTimers.delete(squadName);
-              broadcast(wss, { type: "SQUAD_INACTIVE", squad: squadName });
-              return;
-            }
-            try {
-              const raw = fs.readFileSync(statePath, "utf-8");
-              const state: SquadState = JSON.parse(raw);
-              broadcast(wss, { type: "SQUAD_UPDATE", squad: squadName, state });
-            } catch { /* skip invalid JSON during write */ }
-          }, 50));
-
-        } else if (normalized.endsWith("squad.yaml")) {
-          broadcast(wss, buildSnapshot(squadsDir));
+      wss.on("connection", async (ws) => {
+        try {
+          const snap = await buildSnapshot(squadsDir);
+          ws.send(JSON.stringify(snap));
+        } catch {
+          // Connection may have closed before snapshot was ready
         }
       });
 
-      // Clean up fs watcher when Vite server closes
-      server.httpServer?.on("close", () => {
-        fsWatcher.close();
-        for (const timer of changeTimers.values()) clearTimeout(timer);
+      // Ensure squads directory exists
+      fsp.mkdir(squadsDir, { recursive: true }).catch((err) => {
+        server.config.logger.error(`[squad-watcher] failed to create squads dir: ${err.message}`);
+      });
+
+      // File watcher using chokidar — reliable cross-platform, handles partial writes
+      const watcher = chokidarWatch(squadsDir, {
+        ignoreInitial: true,
+        awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 50 },
+        ignored: [/(^|[/\\])\./, /node_modules/, /output[/\\]/],
+        depth: 2,
+      });
+
+      function handleFileChange(filePath: string) {
+        const relative = path.relative(squadsDir, filePath).replace(/\\/g, "/");
+        const parts = relative.split("/");
+        if (parts.length < 2) return;
+
+        const squadName = parts[0];
+        const fileName = parts[1];
+
+        if (fileName === "state.json") {
+          fsp.readFile(filePath, "utf-8").then((raw) => {
+            const state: SquadState = JSON.parse(raw);
+            broadcast(wss, { type: "SQUAD_UPDATE", squad: squadName, state });
+          }).catch(() => {
+            // Invalid JSON — next change event will retry
+          });
+        } else if (fileName === "squad.yaml") {
+          buildSnapshot(squadsDir).then((snap) => broadcast(wss, snap));
+        }
+      }
+
+      function handleFileRemoval(filePath: string) {
+        const relative = path.relative(squadsDir, filePath).replace(/\\/g, "/");
+        const parts = relative.split("/");
+        if (parts.length < 2) return;
+
+        const squadName = parts[0];
+        const fileName = parts[1];
+
+        if (fileName === "state.json") {
+          broadcast(wss, { type: "SQUAD_INACTIVE", squad: squadName });
+        } else if (fileName === "squad.yaml") {
+          buildSnapshot(squadsDir).then((snap) => broadcast(wss, snap));
+        }
+      }
+
+      watcher.on("add", handleFileChange);
+      watcher.on("change", handleFileChange);
+      watcher.on("unlink", handleFileRemoval);
+
+      server.httpServer.on("close", () => {
+        watcher.close();
       });
     },
   };
