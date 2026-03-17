@@ -149,6 +149,20 @@ export function squadWatcherPlugin(): Plugin {
         server.config.logger.error(`[squad-watcher] failed to create squads dir: ${err.message}`);
       });
 
+      // REST API fallback — serves snapshot over HTTP for polling clients
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url !== "/api/snapshot") return next();
+        try {
+          const snapshot = await buildSnapshot(squadsDir);
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Cache-Control", "no-cache");
+          res.end(JSON.stringify(snapshot));
+        } catch {
+          res.writeHead(500);
+          res.end("Internal Server Error");
+        }
+      });
+
       // File watcher using chokidar — reliable cross-platform, handles partial writes
       const watcher = chokidarWatch(squadsDir, {
         ignoreInitial: true,
