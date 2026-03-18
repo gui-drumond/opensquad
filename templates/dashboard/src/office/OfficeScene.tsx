@@ -24,7 +24,7 @@ export function OfficeScene() {
   );
 
   const agents = useMemo(
-    () => (state ? sortAgentsByDesk(state.agents) : []),
+    () => (state?.agents ? sortAgentsByDesk(state.agents) : []),
     [state]
   );
 

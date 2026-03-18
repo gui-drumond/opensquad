@@ -37,7 +37,7 @@ export function SquadCard({ squad, state, isSelected, onSelect }: SquadCardProps
       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {squad.name}
       </span>
-      {state && (
+      {state?.step && (
         <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
           {state.step.current}/{state.step.total}
         </span>

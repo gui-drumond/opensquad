@@ -65,6 +65,16 @@ async function discoverSquads(squadsDir: string): Promise<SquadInfo[]> {
   return squads;
 }
 
+function isValidState(data: unknown): data is SquadState {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.status === "string" &&
+    d.step != null && typeof d.step === "object" &&
+    Array.isArray(d.agents)
+  );
+}
+
 async function readActiveStates(squadsDir: string): Promise<Record<string, SquadState>> {
   const states: Record<string, SquadState> = {};
 
@@ -81,7 +91,10 @@ async function readActiveStates(squadsDir: string): Promise<Record<string, Squad
 
     try {
       const raw = await fsp.readFile(statePath, "utf-8");
-      states[entry.name] = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (isValidState(parsed)) {
+        states[entry.name] = parsed;
+      }
     } catch {
       // Skip missing or invalid JSON
     }
@@ -181,8 +194,9 @@ export function squadWatcherPlugin(): Plugin {
 
         if (fileName === "state.json") {
           fsp.readFile(filePath, "utf-8").then((raw) => {
-            const state: SquadState = JSON.parse(raw);
-            broadcast(wss, { type: "SQUAD_UPDATE", squad: squadName, state });
+            const parsed = JSON.parse(raw);
+            if (!isValidState(parsed)) return;
+            broadcast(wss, { type: "SQUAD_UPDATE", squad: squadName, state: parsed });
           }).catch(() => {
             // Invalid JSON — next change event will retry
           });

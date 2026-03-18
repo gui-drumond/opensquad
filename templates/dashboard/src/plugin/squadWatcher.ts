@@ -62,6 +62,16 @@ function discoverSquads(squadsDir: string): SquadInfo[] {
   return squads;
 }
 
+function isValidState(data: unknown): data is SquadState {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.status === "string" &&
+    d.step != null && typeof d.step === "object" &&
+    Array.isArray(d.agents)
+  );
+}
+
 function readActiveStates(squadsDir: string): Record<string, SquadState> {
   const states: Record<string, SquadState> = {};
   if (!fs.existsSync(squadsDir)) return states;
@@ -74,7 +84,10 @@ function readActiveStates(squadsDir: string): Record<string, SquadState> {
 
     try {
       const raw = fs.readFileSync(statePath, "utf-8");
-      states[entry.name] = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (isValidState(parsed)) {
+        states[entry.name] = parsed;
+      }
     } catch {
       // Skip invalid JSON
     }
