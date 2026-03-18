@@ -25,7 +25,9 @@ function hspan(ctx: CanvasRenderingContext2D, x1: number, x2: number, y: number,
   for (let x = x1; x <= x2; x++) px(ctx, x, y, color);
 }
 
-function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
+type MouthVariant = "neutral" | "focused" | "smile";
+
+function drawHead(ctx: CanvasRenderingContext2D, c: CharacterColors, mouth: MouthVariant) {
   // --- HAIR (rows 2-7) ---
   hspan(ctx, 16, 30, 2, c.hair);
   hspan(ctx, 15, 31, 3, c.hair);
@@ -58,20 +60,30 @@ function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
   hspan(ctx, 18, 20, 7, c.hairDark);
   hspan(ctx, 26, 28, 7, c.hairDark);
 
-  // Eyes (white + pupil)
-  px(ctx, 18, 9, 0xf0ede8); px(ctx, 19, 9, 0x2a2018); px(ctx, 20, 9, 0xf0ede8);
-  px(ctx, 26, 9, 0xf0ede8); px(ctx, 27, 9, 0x2a2018); px(ctx, 28, 9, 0xf0ede8);
+  // Eyes (white + pupil) — focused shifts pupils down 1px
+  const eyeY = mouth === "focused" ? 10 : 9;
+  px(ctx, 18, eyeY, 0xf0ede8); px(ctx, 19, eyeY, 0x2a2018); px(ctx, 20, eyeY, 0xf0ede8);
+  px(ctx, 26, eyeY, 0xf0ede8); px(ctx, 27, eyeY, 0x2a2018); px(ctx, 28, eyeY, 0xf0ede8);
 
   // Nose
   px(ctx, 23, 11, c.skinShadow); px(ctx, 23, 12, c.skinShadow);
 
-  // Mouth (neutral)
-  hspan(ctx, 21, 25, 14, 0x2a2018);
+  // Mouth
+  if (mouth === "smile") {
+    // Smile: corners at y:13, bottom curve at y:14
+    px(ctx, 20, 13, 0x2a2018); px(ctx, 26, 13, 0x2a2018);
+    hspan(ctx, 21, 25, 14, 0x2a2018);
+  } else {
+    // neutral / focused: same horizontal line at y:14
+    hspan(ctx, 21, 25, 14, 0x2a2018);
+  }
 
   // Ears
   px(ctx, 14, 8, c.skin); px(ctx, 14, 9, c.skinShadow);
   px(ctx, 32, 8, c.skin); px(ctx, 32, 9, c.skinShadow);
+}
 
+function drawBody(ctx: CanvasRenderingContext2D, c: CharacterColors) {
   // --- NECK (rows 15-16) ---
   hspan(ctx, 20, 26, 15, c.skin);
   hspan(ctx, 21, 25, 16, c.skin);
@@ -90,18 +102,6 @@ function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
       else px(ctx, i, y, c.shirt);
     }
   }
-
-  // --- ARMS at sides ---
-  for (let y = 18; y <= 22; y++) { px(ctx, 11, y, c.shirt); px(ctx, 12, y, c.shirt); }
-  px(ctx, 12, 19, c.shirtDark); px(ctx, 12, 20, c.shirtDark);
-  for (let y = 23; y <= 27; y++) { px(ctx, 10, y, c.skin); px(ctx, 11, y, c.skin); }
-  px(ctx, 8, 28, c.skin); px(ctx, 9, 28, c.skin); px(ctx, 10, 28, c.skin);
-  px(ctx, 8, 29, c.skin); px(ctx, 9, 29, c.skinShadow);
-  for (let y = 18; y <= 22; y++) { px(ctx, 34, y, c.shirt); px(ctx, 35, y, c.shirt); }
-  px(ctx, 34, 19, c.shirtDark); px(ctx, 34, 20, c.shirtDark);
-  for (let y = 23; y <= 27; y++) { px(ctx, 35, y, c.skin); px(ctx, 36, y, c.skin); }
-  px(ctx, 36, 28, c.skin); px(ctx, 37, 28, c.skin); px(ctx, 38, 28, c.skin);
-  px(ctx, 37, 29, c.skin); px(ctx, 38, 29, c.skinShadow);
 
   // --- BELT (row 29) ---
   hspan(ctx, 13, 33, 29, c.pantsDark);
@@ -123,11 +123,62 @@ function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
   hspan(ctx, 24, 33, 43, c.shoeLight);
 }
 
-function drawCharacterWorking(ctx: CanvasRenderingContext2D, c: CharacterColors, _frame: 0 | 1) {
-  drawCharacterIdle(ctx, c);
+function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
+  drawHead(ctx, c, "neutral");
+  drawBody(ctx, c);
+
+  // Arms at sides (idle-specific)
+  for (let y = 18; y <= 22; y++) { px(ctx, 11, y, c.shirt); px(ctx, 12, y, c.shirt); }
+  px(ctx, 12, 19, c.shirtDark); px(ctx, 12, 20, c.shirtDark);
+  for (let y = 23; y <= 27; y++) { px(ctx, 10, y, c.skin); px(ctx, 11, y, c.skin); }
+  px(ctx, 8, 28, c.skin); px(ctx, 9, 28, c.skin); px(ctx, 10, 28, c.skin);
+  px(ctx, 8, 29, c.skin); px(ctx, 9, 29, c.skinShadow);
+  for (let y = 18; y <= 22; y++) { px(ctx, 34, y, c.shirt); px(ctx, 35, y, c.shirt); }
+  px(ctx, 34, 19, c.shirtDark); px(ctx, 34, 20, c.shirtDark);
+  for (let y = 23; y <= 27; y++) { px(ctx, 35, y, c.skin); px(ctx, 36, y, c.skin); }
+  px(ctx, 36, 28, c.skin); px(ctx, 37, 28, c.skin); px(ctx, 38, 28, c.skin);
+  px(ctx, 37, 29, c.skin); px(ctx, 38, 29, c.skinShadow);
 }
+
+function drawCharacterWorking(ctx: CanvasRenderingContext2D, c: CharacterColors, frame: 0 | 1) {
+  drawHead(ctx, c, "focused");
+  drawBody(ctx, c);
+
+  // Arms forward (typing) — include shirt sleeve then skin forearm
+  if (frame === 0) {
+    // Left arm: sleeve + forearm reaching forward
+    for (let y = 18; y <= 20; y++) { px(ctx, 11, y, c.shirt); px(ctx, 12, y, c.shirt); }
+    for (let y = 21; y <= 24; y++) { px(ctx, 10, y, c.skin); px(ctx, 11, y, c.skin); }
+    px(ctx, 11, 25, c.skin); px(ctx, 12, 25, c.skin); px(ctx, 13, 26, c.skin);
+    // Right arm
+    for (let y = 18; y <= 20; y++) { px(ctx, 34, y, c.shirt); px(ctx, 35, y, c.shirt); }
+    for (let y = 21; y <= 24; y++) { px(ctx, 35, y, c.skin); px(ctx, 36, y, c.skin); }
+    px(ctx, 34, 25, c.skin); px(ctx, 35, 25, c.skin); px(ctx, 33, 26, c.skin);
+  } else {
+    // Left arm: slightly raised (keystroke)
+    for (let y = 18; y <= 20; y++) { px(ctx, 11, y, c.shirt); px(ctx, 12, y, c.shirt); }
+    for (let y = 21; y <= 23; y++) { px(ctx, 10, y, c.skin); px(ctx, 11, y, c.skin); }
+    px(ctx, 11, 24, c.skin); px(ctx, 12, 24, c.skin); px(ctx, 13, 27, c.skin);
+    // Right arm
+    for (let y = 18; y <= 20; y++) { px(ctx, 34, y, c.shirt); px(ctx, 35, y, c.shirt); }
+    for (let y = 21; y <= 23; y++) { px(ctx, 35, y, c.skin); px(ctx, 36, y, c.skin); }
+    px(ctx, 34, 24, c.skin); px(ctx, 35, 24, c.skin); px(ctx, 33, 27, c.skin);
+  }
+}
+
 function drawCharacterDone(ctx: CanvasRenderingContext2D, c: CharacterColors) {
-  drawCharacterIdle(ctx, c);
+  drawHead(ctx, c, "smile");
+  drawBody(ctx, c);
+
+  // Arms raised (celebration) — shirt sleeve connects to diagonal skin pixels
+  px(ctx, 11, 18, c.shirt); px(ctx, 12, 18, c.shirt); // left sleeve
+  px(ctx, 10, 17, c.skin); px(ctx, 9, 16, c.skin);
+  px(ctx, 9, 12, c.skin); px(ctx, 8, 11, c.skin); px(ctx, 7, 10, c.skin);
+  px(ctx, 6, 9, c.skin); px(ctx, 5, 8, c.skin);
+  px(ctx, 34, 18, c.shirt); px(ctx, 35, 18, c.shirt); // right sleeve
+  px(ctx, 36, 17, c.skin); px(ctx, 37, 16, c.skin);
+  px(ctx, 37, 12, c.skin); px(ctx, 38, 11, c.skin); px(ctx, 39, 10, c.skin);
+  px(ctx, 40, 9, c.skin); px(ctx, 41, 8, c.skin);
 }
 
 export interface CharacterTextures {
