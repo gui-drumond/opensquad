@@ -164,3 +164,100 @@ export function drawScreenGlow(g: PixiGraphics, x: number, y: number) {
   g.roundRect(x + 31, y + 7, 66, 32, 3);
   g.fill({ color: COLORS.monitorScreenOn, alpha: 0.06 });
 }
+
+// === Desk Accessories ===
+// Each agent gets 2-3 accessories deterministically selected by agentIndex.
+
+function drawCoffeeMug(g: PixiGraphics, x: number, y: number) {
+  g.rect(x, y + 2, 8, 8);
+  g.fill({ color: COLORS.mugBody });
+  g.rect(x, y + 2, 8, 2);
+  g.fill({ color: COLORS.mugRim });
+  g.rect(x + 8, y + 4, 3, 4);
+  g.fill({ color: COLORS.mugHandle });
+  // Steam wisps
+  g.rect(x + 2, y, 1, 1);
+  g.fill({ color: 0xffffff, alpha: 0.35 });
+  g.rect(x + 4, y - 1, 1, 1);
+  g.fill({ color: 0xffffff, alpha: 0.25 });
+  g.rect(x + 3, y - 2, 1, 1);
+  g.fill({ color: 0xffffff, alpha: 0.15 });
+}
+
+function drawMiniPlant(g: PixiGraphics, x: number, y: number) {
+  g.rect(x + 1, y + 8, 8, 6);
+  g.fill({ color: COLORS.plantPot });
+  g.rect(x, y + 6, 10, 3);
+  g.fill({ color: COLORS.plantPot });
+  g.circle(x + 5, y + 4, 3);
+  g.fill({ color: COLORS.plantGreen });
+  g.circle(x + 3, y + 2, 2);
+  g.fill({ color: COLORS.plantDark });
+  g.circle(x + 7, y + 2, 2);
+  g.fill({ color: COLORS.plantGreen });
+  g.circle(x + 5, y + 1, 2);
+  g.fill({ color: COLORS.plantDark });
+}
+
+function drawPostIts(g: PixiGraphics, x: number, y: number) {
+  g.rect(x, y, 7, 7);
+  g.fill({ color: COLORS.postItPink });
+  g.rect(x + 3, y + 2, 8, 8);
+  g.fill({ color: COLORS.postItYellow });
+  g.rect(x + 3, y + 2, 8, 2);
+  g.fill({ color: 0xeedd44 });
+  g.rect(x + 4, y + 5, 5, 1);
+  g.fill({ color: 0x000000, alpha: 0.12 });
+  g.rect(x + 4, y + 7, 4, 1);
+  g.fill({ color: 0x000000, alpha: 0.12 });
+}
+
+function drawBookStack(g: PixiGraphics, x: number, y: number) {
+  g.rect(x, y + 4, 10, 3);
+  g.fill({ color: COLORS.bookRed });
+  g.rect(x, y + 2, 10, 3);
+  g.fill({ color: COLORS.bookBlue });
+  g.rect(x + 1, y, 8, 3);
+  g.fill({ color: COLORS.bookGreen });
+  // Spine lines
+  g.rect(x, y + 4, 1, 3);
+  g.fill({ color: 0x000000, alpha: 0.15 });
+  g.rect(x, y + 2, 1, 3);
+  g.fill({ color: 0x000000, alpha: 0.15 });
+}
+
+function drawPhotoFrame(g: PixiGraphics, x: number, y: number) {
+  g.rect(x, y, 8, 10);
+  g.fill({ color: COLORS.photoFrame });
+  g.rect(x + 1, y + 1, 6, 8);
+  g.fill({ color: 0x88aacc }); // photo tint
+}
+
+function drawWaterBottle(g: PixiGraphics, x: number, y: number) {
+  g.rect(x + 1, y, 4, 2);
+  g.fill({ color: COLORS.waterCap });
+  g.rect(x, y + 2, 6, 10);
+  g.fill({ color: COLORS.waterBottle });
+  g.rect(x + 1, y + 3, 4, 4);
+  g.fill({ color: 0xaaddee, alpha: 0.5 }); // water level
+}
+
+const ACCESSORY_POOL = [
+  drawCoffeeMug, drawMiniPlant, drawPostIts,
+  drawBookStack, drawPhotoFrame, drawWaterBottle,
+];
+
+// Left zone: x+14..x+32, right zone: x+96..x+114
+const LEFT_SLOT = { dx: 14, dy: 38 };
+const RIGHT_SLOT = { dx: 100, dy: 38 };
+
+export function drawDeskAccessories(g: PixiGraphics, x: number, y: number, agentIndex: number) {
+  const seed = agentIndex * 7 + 3; // deterministic pseudo-random
+  const idx1 = seed % ACCESSORY_POOL.length;
+  const idx2 = (seed + 2) % ACCESSORY_POOL.length;
+
+  ACCESSORY_POOL[idx1](g, x + LEFT_SLOT.dx, y + LEFT_SLOT.dy);
+  if (idx2 !== idx1) {
+    ACCESSORY_POOL[idx2](g, x + RIGHT_SLOT.dx, y + RIGHT_SLOT.dy);
+  }
+}

@@ -4,7 +4,7 @@ import { Container, Graphics, Text, Sprite } from "pixi.js";
 import type { Agent } from "@/types/state";
 import type { Graphics as PixiGraphics, TextStyleOptions, Texture } from "pixi.js";
 import { COLORS, CELL_W, CELL_H, TILE, CHARACTER_VARIANTS } from "./palette";
-import { drawDeskArea, drawWorkstationBack, drawWorkstationFront, drawScreenGlow } from "./drawDesk";
+import { drawDeskArea, drawWorkstationBack, drawWorkstationFront, drawScreenGlow, drawDeskAccessories } from "./drawDesk";
 import { getCharacterTextures } from "./textures";
 
 extend({ Container, Graphics, Text, Sprite });
@@ -70,8 +70,9 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
     (g: PixiGraphics) => {
       g.clear();
       drawWorkstationFront(g, 0, 0);
+      drawDeskAccessories(g, 0, 0, agentIndex);
     },
-    []
+    [agentIndex]
   );
 
   const drawBubble = useCallback(
