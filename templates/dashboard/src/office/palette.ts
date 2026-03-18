@@ -124,7 +124,7 @@ export const COLORS = {
 export const TILE = 32;
 export const CELL_W = 4 * TILE; // 128px wide per cell (spacious)
 export const CELL_H = 4 * TILE; // 128px tall per cell
-export const SCENE_SCALE = 2;   // Integer scaling — crisp pixel art
+export const SCENE_SCALE = 3;   // Integer scaling — crisp pixel art
 
 export type CharacterColors = {
   hair: number;      hairLight: number;     hairDark: number;

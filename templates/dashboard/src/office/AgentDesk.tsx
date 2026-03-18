@@ -80,7 +80,7 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
       g.clear();
 
       // Measure approximate card width
-      const cardW = 24 + 12 + agent.name.length * 7 + 12;
+      const cardW = 24 + 16 + agent.name.length * 7 + 12;
       const cardH = 20;
       const cardX = (CELL_W - cardW) / 2;
       const cardY = -24;
@@ -132,7 +132,7 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
       <pixiText
         text={agent.icon || "🤖"}
         style={{ fontSize: 11 } as TextStyleOptions}
-        x={(CELL_W - (24 + 12 + agent.name.length * 7 + 12)) / 2 + 6}
+        x={(CELL_W - (24 + 16 + agent.name.length * 7 + 12)) / 2 + 6}
         y={-22}
       />
       <pixiText
@@ -143,7 +143,7 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
           fontFamily: "-apple-system, 'Segoe UI', sans-serif",
           fontWeight: "600",
         } as TextStyleOptions}
-        x={(CELL_W - (24 + 12 + agent.name.length * 7 + 12)) / 2 + 20}
+        x={(CELL_W - (24 + 16 + agent.name.length * 7 + 12)) / 2 + 24}
         y={-22}
       />
     </pixiContainer>
