@@ -131,13 +131,13 @@ export function AgentDesk({ agent, agentIndex }: AgentDeskProps) {
       {/* Layer 1: chair + monitor (behind character) */}
       <pixiGraphics draw={drawStationBack} />
 
-      {/* Layer 2: character sprite — centered in 128px cell: (128-32)/2=48 */}
+      {/* Layer 2: character sprite — centered in 128px cell: (128-48)/2=40 */}
       <pixiSprite
         texture={currentTexture}
-        x={48}
-        y={72}
-        width={32}
-        height={32}
+        x={40}
+        y={58}
+        width={48}
+        height={48}
       />
 
       {/* Layer 3: desk surface + keyboard (in front of character) */}

@@ -1,11 +1,5 @@
 import { Texture, CanvasSource } from "pixi.js";
-import { COLORS } from "./palette";
-
-type CharacterColors = {
-  hair: number;
-  skin: number;
-  shirt: number;
-};
+import { COLORS, CharacterColors } from "./palette";
 
 function hexToRgb(hex: number): [number, number, number] {
   return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
@@ -27,176 +21,113 @@ function px(ctx: CanvasRenderingContext2D, x: number, y: number, color: number) 
   ctx.fillRect(x, y, 1, 1);
 }
 
+function hspan(ctx: CanvasRenderingContext2D, x1: number, x2: number, y: number, color: number) {
+  for (let x = x1; x <= x2; x++) px(ctx, x, y, color);
+}
+
 function drawCharacterIdle(ctx: CanvasRenderingContext2D, c: CharacterColors) {
-  // Hair
-  px(ctx, 12, 2, c.hair); px(ctx, 13, 2, c.hair); px(ctx, 14, 2, c.hair);
-  px(ctx, 15, 2, c.hair); px(ctx, 16, 2, c.hair); px(ctx, 17, 2, c.hair);
-  px(ctx, 11, 3, c.hair); px(ctx, 12, 3, c.hair); px(ctx, 13, 3, c.hair);
-  px(ctx, 14, 3, c.hair); px(ctx, 15, 3, c.hair); px(ctx, 16, 3, c.hair);
-  px(ctx, 17, 3, c.hair); px(ctx, 18, 3, c.hair); px(ctx, 19, 3, c.hair);
-  px(ctx, 11, 4, c.hair); px(ctx, 19, 4, c.hair); // sideburns
+  // --- HAIR (rows 2-7) ---
+  hspan(ctx, 16, 30, 2, c.hair);
+  hspan(ctx, 15, 31, 3, c.hair);
+  hspan(ctx, 14, 32, 4, c.hair);
+  hspan(ctx, 14, 32, 5, c.hair);
+  px(ctx, 17, 3, c.hairLight); px(ctx, 20, 3, c.hairLight);
+  px(ctx, 25, 4, c.hairLight); px(ctx, 28, 3, c.hairLight);
+  px(ctx, 16, 4, c.hairLight); px(ctx, 22, 4, c.hairLight); px(ctx, 30, 4, c.hairLight);
+  px(ctx, 14, 5, c.hairDark); px(ctx, 32, 5, c.hairDark);
+  px(ctx, 15, 4, c.hairDark); px(ctx, 31, 4, c.hairDark);
+  px(ctx, 14, 6, c.hair); px(ctx, 14, 7, c.hair);
+  px(ctx, 32, 6, c.hair); px(ctx, 32, 7, c.hair);
 
-  // Face
-  px(ctx, 12, 4, c.skin); px(ctx, 13, 4, c.skin); px(ctx, 14, 4, c.skin);
-  px(ctx, 15, 4, c.skin); px(ctx, 16, 4, c.skin); px(ctx, 17, 4, c.skin);
-  px(ctx, 18, 4, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 5, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 6, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 7, c.skin);
-  for (let i = 12; i <= 18; i++) px(ctx, i, 8, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 9, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 10, c.skin);
+  // --- FACE (rows 6-14) ---
+  hspan(ctx, 15, 31, 6, c.skin);
+  hspan(ctx, 15, 31, 7, c.skin);
+  hspan(ctx, 15, 31, 8, c.skin);
+  hspan(ctx, 15, 31, 9, c.skin);
+  hspan(ctx, 16, 30, 10, c.skin);
+  hspan(ctx, 16, 30, 11, c.skin);
+  hspan(ctx, 17, 29, 12, c.skin);
+  hspan(ctx, 18, 28, 13, c.skin);
+  hspan(ctx, 19, 27, 14, c.skin);
+  for (let i = 16; i <= 17; i++) { px(ctx, i, 11, c.skinShadow); px(ctx, i, 12, c.skinShadow); }
+  for (let i = 29; i <= 30; i++) { px(ctx, i, 11, c.skinShadow); px(ctx, i, 12, c.skinShadow); }
+  px(ctx, 18, 13, c.skinShadow); px(ctx, 19, 13, c.skinShadow);
+  px(ctx, 27, 13, c.skinShadow); px(ctx, 28, 13, c.skinShadow);
 
-  // Eyes
-  px(ctx, 13, 6, 0x2a2018); px(ctx, 17, 6, 0x2a2018);
+  // Eyebrows
+  hspan(ctx, 18, 20, 7, c.hairDark);
+  hspan(ctx, 26, 28, 7, c.hairDark);
 
-  // Mouth (idle — neutral line)
-  px(ctx, 14, 9, 0x2a2018); px(ctx, 15, 9, 0x2a2018); px(ctx, 16, 9, 0x2a2018);
+  // Eyes (white + pupil)
+  px(ctx, 18, 9, 0xf0ede8); px(ctx, 19, 9, 0x2a2018); px(ctx, 20, 9, 0xf0ede8);
+  px(ctx, 26, 9, 0xf0ede8); px(ctx, 27, 9, 0x2a2018); px(ctx, 28, 9, 0xf0ede8);
 
-  // Neck
-  px(ctx, 14, 11, c.skin); px(ctx, 15, 11, c.skin);
-  px(ctx, 16, 11, c.skin); px(ctx, 17, 11, c.skin);
+  // Nose
+  px(ctx, 23, 11, c.skinShadow); px(ctx, 23, 12, c.skinShadow);
 
-  // Shirt body
-  for (let i = 10; i <= 21; i++) px(ctx, i, 12, c.shirt); // shoulders
-  for (let y = 13; y <= 19; y++) {
-    for (let i = 11; i <= 20; i++) px(ctx, i, y, c.shirt);
+  // Mouth (neutral)
+  hspan(ctx, 21, 25, 14, 0x2a2018);
+
+  // Ears
+  px(ctx, 14, 8, c.skin); px(ctx, 14, 9, c.skinShadow);
+  px(ctx, 32, 8, c.skin); px(ctx, 32, 9, c.skinShadow);
+
+  // --- NECK (rows 15-16) ---
+  hspan(ctx, 20, 26, 15, c.skin);
+  hspan(ctx, 21, 25, 16, c.skin);
+  px(ctx, 20, 15, c.skinShadow); px(ctx, 26, 15, c.skinShadow);
+
+  // --- COLLAR (row 17) ---
+  hspan(ctx, 17, 29, 17, COLORS.collarWhite);
+  px(ctx, 22, 17, 0xe0e0e0); px(ctx, 23, 17, 0xe0e0e0); px(ctx, 24, 17, 0xe0e0e0);
+
+  // --- SHIRT (rows 18-28) ---
+  for (let y = 18; y <= 28; y++) {
+    for (let i = 13; i <= 33; i++) {
+      if (i <= 15) px(ctx, i, y, c.shirtDark);
+      else if (i >= 31) px(ctx, i, y, c.shirtDark);
+      else if (i >= 22 && i <= 24) px(ctx, i, y, c.shirtLight);
+      else px(ctx, i, y, c.shirt);
+    }
   }
 
-  // Arms at sides
-  px(ctx, 8, 12, c.skin); px(ctx, 9, 12, c.shirt); px(ctx, 10, 12, c.shirt);
-  px(ctx, 8, 13, c.skin); px(ctx, 9, 13, c.skin);
-  px(ctx, 8, 14, c.skin); px(ctx, 9, 14, c.skin);
-  px(ctx, 8, 15, c.skin); px(ctx, 9, 15, c.skin);
-  px(ctx, 8, 16, c.skin); px(ctx, 9, 16, c.skin);
-  px(ctx, 8, 17, c.skin); px(ctx, 9, 17, c.skin);
-  px(ctx, 8, 18, c.skin);
-  px(ctx, 21, 12, c.shirt); px(ctx, 22, 12, c.shirt); px(ctx, 23, 12, c.skin);
-  px(ctx, 22, 13, c.skin); px(ctx, 23, 13, c.skin);
-  px(ctx, 22, 14, c.skin); px(ctx, 23, 14, c.skin);
-  px(ctx, 22, 15, c.skin); px(ctx, 23, 15, c.skin);
-  px(ctx, 22, 16, c.skin); px(ctx, 23, 16, c.skin);
-  px(ctx, 22, 17, c.skin); px(ctx, 23, 17, c.skin);
-  px(ctx, 23, 18, c.skin);
+  // --- ARMS at sides ---
+  for (let y = 18; y <= 22; y++) { px(ctx, 11, y, c.shirt); px(ctx, 12, y, c.shirt); }
+  px(ctx, 12, 19, c.shirtDark); px(ctx, 12, 20, c.shirtDark);
+  for (let y = 23; y <= 27; y++) { px(ctx, 10, y, c.skin); px(ctx, 11, y, c.skin); }
+  px(ctx, 8, 28, c.skin); px(ctx, 9, 28, c.skin); px(ctx, 10, 28, c.skin);
+  px(ctx, 8, 29, c.skin); px(ctx, 9, 29, c.skinShadow);
+  for (let y = 18; y <= 22; y++) { px(ctx, 34, y, c.shirt); px(ctx, 35, y, c.shirt); }
+  px(ctx, 34, 19, c.shirtDark); px(ctx, 34, 20, c.shirtDark);
+  for (let y = 23; y <= 27; y++) { px(ctx, 35, y, c.skin); px(ctx, 36, y, c.skin); }
+  px(ctx, 36, 28, c.skin); px(ctx, 37, 28, c.skin); px(ctx, 38, 28, c.skin);
+  px(ctx, 37, 29, c.skin); px(ctx, 38, 29, c.skinShadow);
 
-  // Belt
-  for (let i = 11; i <= 20; i++) px(ctx, i, 20, COLORS.pantsDark);
+  // --- BELT (row 29) ---
+  hspan(ctx, 13, 33, 29, c.pantsDark);
+  px(ctx, 22, 29, COLORS.beltBuckle); px(ctx, 23, 29, COLORS.beltBuckle); px(ctx, 24, 29, COLORS.beltBuckle);
 
-  // Legs (pants)
-  for (let y = 21; y <= 26; y++) {
-    px(ctx, 11, y, COLORS.pantsDark); px(ctx, 12, y, COLORS.pantsDark);
-    px(ctx, 13, y, COLORS.pantsDark); px(ctx, 14, y, COLORS.pantsDark);
-    // gap between legs
-    px(ctx, 17, y, COLORS.pantsDark); px(ctx, 18, y, COLORS.pantsDark);
-    px(ctx, 19, y, COLORS.pantsDark); px(ctx, 20, y, COLORS.pantsDark);
+  // --- PANTS (rows 30-39) ---
+  for (let y = 30; y <= 39; y++) {
+    for (let i = 14; i <= 21; i++) px(ctx, i, y, i <= 15 ? c.pantsDark : c.pants);
+    for (let i = 25; i <= 32; i++) px(ctx, i, y, i >= 31 ? c.pantsDark : c.pants);
+    px(ctx, 21, y, c.pantsDark); px(ctx, 25, y, c.pantsDark);
   }
 
-  // Shoes
-  for (let i = 10; i <= 14; i++) px(ctx, i, 27, COLORS.shoeDark);
-  for (let i = 10; i <= 14; i++) px(ctx, i, 28, COLORS.shoeDark);
-  for (let i = 10; i <= 14; i++) px(ctx, i, 29, COLORS.shoeDark);
-  for (let i = 17; i <= 21; i++) px(ctx, i, 27, COLORS.shoeDark);
-  for (let i = 17; i <= 21; i++) px(ctx, i, 28, COLORS.shoeDark);
-  for (let i = 17; i <= 21; i++) px(ctx, i, 29, COLORS.shoeDark);
+  // --- SHOES (rows 40-43) ---
+  for (let i = 13; i <= 22; i++) { px(ctx, i, 40, c.shoe); px(ctx, i, 41, c.shoe); }
+  for (let i = 13; i <= 22; i++) px(ctx, i, 42, i <= 14 ? c.shoeLight : c.shoe);
+  hspan(ctx, 13, 22, 43, c.shoeLight);
+  for (let i = 24; i <= 33; i++) { px(ctx, i, 40, c.shoe); px(ctx, i, 41, c.shoe); }
+  for (let i = 24; i <= 33; i++) px(ctx, i, 42, i >= 32 ? c.shoeLight : c.shoe);
+  hspan(ctx, 24, 33, 43, c.shoeLight);
 }
 
-function drawCharacterWorking(ctx: CanvasRenderingContext2D, c: CharacterColors, frame: 0 | 1) {
-  // Same head/hair as idle
-  px(ctx, 12, 2, c.hair); px(ctx, 13, 2, c.hair); px(ctx, 14, 2, c.hair);
-  px(ctx, 15, 2, c.hair); px(ctx, 16, 2, c.hair); px(ctx, 17, 2, c.hair);
-  px(ctx, 11, 3, c.hair); px(ctx, 12, 3, c.hair); px(ctx, 13, 3, c.hair);
-  px(ctx, 14, 3, c.hair); px(ctx, 15, 3, c.hair); px(ctx, 16, 3, c.hair);
-  px(ctx, 17, 3, c.hair); px(ctx, 18, 3, c.hair); px(ctx, 19, 3, c.hair);
-  px(ctx, 11, 4, c.hair); px(ctx, 19, 4, c.hair);
-
-  for (let i = 12; i <= 18; i++) px(ctx, i, 4, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 5, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 6, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 7, c.skin);
-  for (let i = 12; i <= 18; i++) px(ctx, i, 8, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 9, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 10, c.skin);
-  px(ctx, 13, 6, 0x2a2018); px(ctx, 17, 6, 0x2a2018);
-  // Eyes slightly down (focused)
-  px(ctx, 13, 7, 0x2a2018); px(ctx, 17, 7, 0x2a2018);
-  px(ctx, 14, 9, 0x2a2018); px(ctx, 15, 9, 0x2a2018); px(ctx, 16, 9, 0x2a2018);
-
-  px(ctx, 14, 11, c.skin); px(ctx, 15, 11, c.skin);
-  px(ctx, 16, 11, c.skin); px(ctx, 17, 11, c.skin);
-
-  for (let i = 10; i <= 21; i++) px(ctx, i, 12, c.shirt);
-  for (let y = 13; y <= 19; y++) {
-    for (let i = 11; i <= 20; i++) px(ctx, i, y, c.shirt);
-  }
-  for (let i = 11; i <= 20; i++) px(ctx, i, 20, COLORS.pantsDark);
-  for (let y = 21; y <= 26; y++) {
-    px(ctx, 11, y, COLORS.pantsDark); px(ctx, 12, y, COLORS.pantsDark);
-    px(ctx, 13, y, COLORS.pantsDark); px(ctx, 14, y, COLORS.pantsDark);
-    px(ctx, 17, y, COLORS.pantsDark); px(ctx, 18, y, COLORS.pantsDark);
-    px(ctx, 19, y, COLORS.pantsDark); px(ctx, 20, y, COLORS.pantsDark);
-  }
-  for (let i = 10; i <= 14; i++) { px(ctx, i, 27, COLORS.shoeDark); px(ctx, i, 28, COLORS.shoeDark); px(ctx, i, 29, COLORS.shoeDark); }
-  for (let i = 17; i <= 21; i++) { px(ctx, i, 27, COLORS.shoeDark); px(ctx, i, 28, COLORS.shoeDark); px(ctx, i, 29, COLORS.shoeDark); }
-
-  // Arms forward (typing) — alternate frames
-  if (frame === 0) {
-    // Arms reaching forward and down
-    for (let y = 12; y <= 16; y++) { px(ctx, 8, y, c.skin); px(ctx, 9, y, c.skin); }
-    px(ctx, 9, 17, c.skin); px(ctx, 10, 17, c.skin); px(ctx, 11, 17, c.skin);
-    for (let y = 12; y <= 16; y++) { px(ctx, 22, y, c.skin); px(ctx, 23, y, c.skin); }
-    px(ctx, 20, 17, c.skin); px(ctx, 21, 17, c.skin); px(ctx, 22, 17, c.skin);
-  } else {
-    // Arms slightly raised (keystroke)
-    for (let y = 12; y <= 15; y++) { px(ctx, 8, y, c.skin); px(ctx, 9, y, c.skin); }
-    px(ctx, 9, 16, c.skin); px(ctx, 10, 16, c.skin); px(ctx, 11, 18, c.skin);
-    for (let y = 12; y <= 15; y++) { px(ctx, 22, y, c.skin); px(ctx, 23, y, c.skin); }
-    px(ctx, 20, 16, c.skin); px(ctx, 21, 16, c.skin); px(ctx, 22, 18, c.skin);
-  }
+function drawCharacterWorking(ctx: CanvasRenderingContext2D, c: CharacterColors, _frame: 0 | 1) {
+  drawCharacterIdle(ctx, c);
 }
-
 function drawCharacterDone(ctx: CanvasRenderingContext2D, c: CharacterColors) {
-  // Head + face
-  px(ctx, 12, 2, c.hair); px(ctx, 13, 2, c.hair); px(ctx, 14, 2, c.hair);
-  px(ctx, 15, 2, c.hair); px(ctx, 16, 2, c.hair); px(ctx, 17, 2, c.hair);
-  px(ctx, 11, 3, c.hair); px(ctx, 12, 3, c.hair); px(ctx, 13, 3, c.hair);
-  px(ctx, 14, 3, c.hair); px(ctx, 15, 3, c.hair); px(ctx, 16, 3, c.hair);
-  px(ctx, 17, 3, c.hair); px(ctx, 18, 3, c.hair); px(ctx, 19, 3, c.hair);
-  px(ctx, 11, 4, c.hair); px(ctx, 19, 4, c.hair);
-
-  for (let i = 12; i <= 18; i++) px(ctx, i, 4, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 5, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 6, c.skin);
-  for (let i = 11; i <= 19; i++) px(ctx, i, 7, c.skin);
-  for (let i = 12; i <= 18; i++) px(ctx, i, 8, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 9, c.skin);
-  for (let i = 13; i <= 17; i++) px(ctx, i, 10, c.skin);
-  px(ctx, 13, 6, 0x2a2018); px(ctx, 17, 6, 0x2a2018);
-  // Smile
-  px(ctx, 13, 9, 0x2a2018); px(ctx, 17, 9, 0x2a2018);
-  px(ctx, 14, 10, 0x2a2018); px(ctx, 15, 10, 0x2a2018); px(ctx, 16, 10, 0x2a2018);
-
-  px(ctx, 14, 11, c.skin); px(ctx, 15, 11, c.skin);
-  px(ctx, 16, 11, c.skin); px(ctx, 17, 11, c.skin);
-
-  for (let i = 10; i <= 21; i++) px(ctx, i, 12, c.shirt);
-  for (let y = 13; y <= 19; y++) {
-    for (let i = 11; i <= 20; i++) px(ctx, i, y, c.shirt);
-  }
-  for (let i = 11; i <= 20; i++) px(ctx, i, 20, COLORS.pantsDark);
-  for (let y = 21; y <= 26; y++) {
-    px(ctx, 11, y, COLORS.pantsDark); px(ctx, 12, y, COLORS.pantsDark);
-    px(ctx, 13, y, COLORS.pantsDark); px(ctx, 14, y, COLORS.pantsDark);
-    px(ctx, 17, y, COLORS.pantsDark); px(ctx, 18, y, COLORS.pantsDark);
-    px(ctx, 19, y, COLORS.pantsDark); px(ctx, 20, y, COLORS.pantsDark);
-  }
-  for (let i = 10; i <= 14; i++) { px(ctx, i, 27, COLORS.shoeDark); px(ctx, i, 28, COLORS.shoeDark); px(ctx, i, 29, COLORS.shoeDark); }
-  for (let i = 17; i <= 21; i++) { px(ctx, i, 27, COLORS.shoeDark); px(ctx, i, 28, COLORS.shoeDark); px(ctx, i, 29, COLORS.shoeDark); }
-
-  // Arms raised (celebration)
-  px(ctx, 7, 8, c.skin); px(ctx, 6, 7, c.skin); px(ctx, 5, 6, c.skin);
-  px(ctx, 8, 10, c.skin); px(ctx, 9, 11, c.skin); px(ctx, 9, 12, c.shirt);
-  px(ctx, 24, 8, c.skin); px(ctx, 25, 7, c.skin); px(ctx, 26, 6, c.skin);
-  px(ctx, 23, 10, c.skin); px(ctx, 22, 11, c.skin); px(ctx, 22, 12, c.shirt);
+  drawCharacterIdle(ctx, c);
 }
 
 export interface CharacterTextures {
@@ -207,7 +138,7 @@ export interface CharacterTextures {
 }
 
 export function generateCharacterTextures(colors: CharacterColors): CharacterTextures {
-  const size = 32;
+  const size = 48;
 
   function makeFrame(drawFn: (ctx: CanvasRenderingContext2D) => void): Texture {
     const [canvas, ctx] = createCanvas(size, size);
