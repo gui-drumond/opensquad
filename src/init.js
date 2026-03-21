@@ -384,11 +384,11 @@ async function setupOpenNotebook(targetDir, { useLmStudio = false } = {}) {
     volumes:
       - surrealdb-data:/mydata
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      test: ["CMD", "/surreal", "isready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
     restart: always
     pull_policy: always
 
@@ -403,7 +403,10 @@ async function setupOpenNotebook(targetDir, { useLmStudio = false } = {}) {
       - SURREAL_USER=${dbUser}
       - SURREAL_PASSWORD=${dbPass}
       - SURREAL_NAMESPACE=open_notebook
-      - SURREAL_DATABASE=open_notebook
+      - SURREAL_DATABASE=open_notebook${useLmStudio ? `
+      - EMBEDDING_PROVIDER=lm_studio
+      - EMBEDDING_MODEL=nomic-embed-text
+      - LM_STUDIO_BASE_URL=http://host.docker.internal:1234/v1` : ''}
     volumes:
       - notebook-data:/app/data
     depends_on:

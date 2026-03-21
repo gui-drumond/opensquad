@@ -3,6 +3,13 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest", "--config", "_opensquad/config/playwright.config.json"]
+    },
+    "open-notebook": {
+      "command": "uvx",
+      "args": ["open-notebook-mcp"],
+      "env": {
+        "OPEN_NOTEBOOK_URL": "http://localhost:5055"
+      }
     }
   }
 }

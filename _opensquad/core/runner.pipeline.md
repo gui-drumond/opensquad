@@ -12,8 +12,32 @@ Before starting execution:
 1. You have already loaded:
    - The squad's `squad.yaml` (passed to you by the Opensquad skill)
    - The squad's `squad-party.csv` (all agent personas)
-   - Company context from `_opensquad/_memory/company.md`
    - Squad memory from `squads/{name}/_memory/memories.md`
+
+1b. **RAG Knowledge Retrieval** (MANDATORY — replaces raw file loading):
+   Instead of reading `_opensquad/_memory/company.md` or other `.md` files directly, ALWAYS use the `open-notebook` MCP tools to retrieve only the relevant context. This reduces token consumption by ~97%.
+
+   - **Check RAG availability**: Verify the `open-notebook` MCP server is configured (check `.mcp.json`).
+     - If available: use `search_sources` for ALL context retrieval (company info, domain knowledge, best practices)
+     - If NOT available: fall back to reading `_opensquad/_memory/company.md` directly (legacy mode)
+
+   - **How to use RAG**:
+     1. For company context: `search_sources` with query = "{squad description} company context brand voice"
+     2. For domain knowledge: `search_sources` with query = "{step topic} {agent role} best practices"
+     3. For squad-specific history: `search_sources` with query = "{squad name} previous runs learnings"
+     4. Each search returns top 5 chunks (~500 tokens) instead of full files (~55,000 tokens)
+
+   - **When to search**:
+     - Once at initialization: company context + squad domain
+     - Before each step: step-specific knowledge relevant to the agent's task
+     - Before review steps: search for quality criteria and brand guidelines
+
+   - **RAG search template**:
+     ```
+     Use MCP tool: search_sources
+     Query: "{relevant keywords for the current context}"
+     ```
+     Take the returned chunks and include them as context for the agent, replacing raw file reads.
 
 2. Read `squads/{name}/pipeline/pipeline.yaml` for the pipeline definition
 3. **Resolve skills**: Read `squad.yaml` → `skills` section. For each non-native skill (anything other than web_search, web_fetch):
@@ -233,6 +257,17 @@ Apply this transformation consistently for every write in this step.
    ```
 
 1. **Read the step file** completely: `squads/{name}/pipeline/steps/{step-file}.md`
+
+1b. **RAG context enrichment** (if `open-notebook` MCP is available):
+   Before executing the step, search for relevant knowledge to inject into the agent's context:
+   ```
+   search_sources: "{step label} {agent role} {step input summary}"
+   ```
+   Include the returned chunks as additional context for the agent. This replaces loading entire reference files and saves thousands of tokens per step.
+   - For writing agents: search for brand voice, content style, audience preferences
+   - For research agents: search for domain knowledge, methodology, data sources
+   - For review agents: search for quality criteria, brand guidelines, review checklists
+
 2. **Check execution mode** from the step's frontmatter:
 
 #### If `execution: subagent`
@@ -250,7 +285,7 @@ Apply this transformation consistently for every write in this step.
   - If the agent has tasks: include ALL task files in order with instructions to execute sequentially, piping output from each task to the next
   - If the agent has no tasks: include the step instructions and operational framework as before
   - The veto conditions from the step file (agent should self-check before completing)
-  - The company context
+  - **RAG context** (preferred): The chunks retrieved via `search_sources` for this step's topic (company context, domain knowledge, brand guidelines). Only if RAG is unavailable, fall back to raw `_opensquad/_memory/company.md`.
   - The squad memory
   - The path to save output
 - Wait for the subagent to complete

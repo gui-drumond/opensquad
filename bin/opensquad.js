@@ -73,10 +73,13 @@ try {
   } else if (command === 'project' || command === 'projects') {
     const subcommand = positionals[1] || 'list';
     await run(projectsCli, subcommand, positionals.slice(2));
+  } else if (command === 'up') {
+    const { up } = await import('../src/services.js');
+    await up(cwd);
   } else if (command === 'services') {
-    const { startServices, stopServices, healthCheck, indexDocs } = await import('../src/services.js');
+    const { startServices, stopServices, healthCheck, indexDocs, up: upFn } = await import('../src/services.js');
     const sub = positionals[1] || 'start';
-    const serviceHandlers = { start: startServices, stop: stopServices, health: healthCheck, index: indexDocs };
+    const serviceHandlers = { start: startServices, stop: stopServices, health: healthCheck, index: indexDocs, up: upFn };
     const handler = serviceHandlers[sub];
     if (handler) {
       await handler(cwd);
@@ -90,6 +93,7 @@ try {
   opensquad — Multi-agent orchestration for Claude Code
 
   Usage:
+    npx opensquad up                      Start everything (Docker + LM Studio + index docs)
     npx opensquad init                    Initialize Opensquad
     npx opensquad update                  Update Opensquad core
     npx opensquad install <name>          Install a skill

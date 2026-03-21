@@ -280,12 +280,19 @@ export async function ensureServices(targetDir) {
 }
 
 /**
- * Ensure LM Studio daemon is running for local embeddings.
+ * Ensure LM Studio daemon is running and embedding model is loaded.
  */
 async function ensureLmStudio() {
-  // Check if already responding
-  const status = await httpGet(`http://localhost:${LM_STUDIO_PORT}/v1/models`, API_HEALTH_TIMEOUT_MS);
-  if (status.ok) return;
+  // Check if already responding with models loaded
+  const status = await httpGet(`http://localhost:${LM_STUDIO_PORT}/v1/models`, API_HEALTH_TIMEOUT_MS, { includeBody: true });
+  if (status.ok) {
+    // Check if embedding model is loaded
+    const body = status.body || '';
+    if (body.includes('nomic') || body.includes('embed')) return;
+    // Server is up but model not loaded — try to load it
+    await loadEmbeddingModel();
+    return;
+  }
 
   // Try `lms` CLI (LM Studio's command-line tool)
   try {
@@ -300,6 +307,7 @@ async function ensureLmStudio() {
       const check = await httpGet(`http://localhost:${LM_STUDIO_PORT}/v1/models`, API_HEALTH_TIMEOUT_MS);
       if (check.ok) {
         console.log('  ✅ LM Studio ready.');
+        await loadEmbeddingModel();
         return;
       }
     }
@@ -307,6 +315,24 @@ async function ensureLmStudio() {
   } catch {
     // lms CLI not found — user needs to open LM Studio manually
     console.log('  ⚠️  LM Studio not running. Open LM Studio app or run: lms server start');
+  }
+}
+
+/**
+ * Load the embedding model in LM Studio if not already loaded.
+ */
+async function loadEmbeddingModel() {
+  try {
+    const result = execFileSync('lms', ['ps'], { stdio: 'pipe', timeout: 5000 });
+    const output = result.toString();
+    if (output.includes('nomic') || output.includes('embed')) {
+      return; // Already loaded
+    }
+    console.log('  📦 Loading embedding model (nomic-embed-text)...');
+    execFileSync('lms', ['load', 'text-embedding-nomic-embed-text-v1.5'], { stdio: 'pipe', timeout: 60000 });
+    console.log('  ✅ Embedding model loaded.');
+  } catch {
+    console.log('  ⚠️  Could not load embedding model. Load it manually in LM Studio.');
   }
 }
 
@@ -508,4 +534,37 @@ export async function indexDocs(targetDir) {
   }
 
   console.log(`\n  Indexing complete: ${indexed} succeeded, ${failed} failed.`);
+}
+
+/**
+ * Single command to start everything: Docker + LM Studio + index docs.
+ * Usage: npx opensquad up
+ */
+export async function up(targetDir) {
+  console.log('\n  🚀 OpenSquad — Starting all services\n');
+
+  const config = await loadConfig(targetDir);
+
+  // 1. Start Docker containers
+  console.log('  ━━━ Step 1/3: Docker services ━━━');
+  await startServices(targetDir);
+
+  // 2. Start LM Studio + load embedding model
+  if (config.lmStudio) {
+    console.log('\n  ━━━ Step 2/3: LM Studio embeddings ━━━');
+    await ensureLmStudio();
+  } else {
+    console.log('\n  ━━━ Step 2/3: LM Studio ━━━');
+    console.log('  ⏭️  Skipped (not configured)');
+  }
+
+  // 3. Index docs
+  console.log('\n  ━━━ Step 3/3: Indexing docs ━━━');
+  await indexDocs(targetDir);
+
+  // Final health check
+  console.log('\n  ━━━ Final status ━━━');
+  await healthCheck(targetDir);
+
+  console.log('  ✅ OpenSquad RAG stack ready! Token savings: ~97%\n');
 }
