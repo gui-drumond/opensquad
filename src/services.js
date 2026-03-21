@@ -36,7 +36,7 @@ const DOCKER_DESKTOP_PATHS = {
 const BASE_ENDPOINTS = [
   { name: 'Open Notebook API', url: `http://localhost:${API_PORT}/health` },
   { name: 'Open Notebook UI', url: 'http://localhost:8502' },
-  { name: 'SurrealDB', url: 'http://localhost:8000/health' },
+  { name: 'SurrealDB', url: 'http://localhost:8002/health' },
 ];
 
 const LM_STUDIO_ENDPOINT = { name: 'LM Studio', url: `http://localhost:${LM_STUDIO_PORT}/v1/models`, optional: true };

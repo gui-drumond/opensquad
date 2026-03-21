@@ -380,7 +380,7 @@ async function setupOpenNotebook(targetDir, { useLmStudio = false } = {}) {
     command: start --log info --user ${dbUser} --pass ${dbPass} rocksdb:/mydata/mydatabase.db
     user: root
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8002:8000"
     volumes:
       - surrealdb-data:/mydata
     healthcheck:

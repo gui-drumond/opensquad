@@ -1,0 +1,11 @@
+{
+  "_comment": "PLACEHOLDER — Replace this file with your ComfyUI workflow exported in API format.",
+  "_instructions": [
+    "1. Open ComfyUI Desktop",
+    "2. Build your LTX-2.3 text-to-video workflow",
+    "3. Click Settings (gear icon) → Enable Dev Mode",
+    "4. Click 'Save (API Format)' to export the workflow JSON",
+    "5. Replace this file with the exported JSON",
+    "6. The generate.js script will auto-inject: prompt, width, height, frames, steps, seed"
+  ]
+}
